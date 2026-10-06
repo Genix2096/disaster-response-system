@@ -49,8 +49,7 @@ async function createIncident(req, res, next) {
 
     logger.info('Creating new incident', { incidentId, type, priority, userId });
 
-    // Generate AI summary (graceful fallback on failure)
-    const aiSummary = await groqService.generateSummary(description.trim(), type);
+    // (AI summary will be generated after building the incident data)
 
     // Determine departments deterministically
     let departments = [];
@@ -110,7 +109,6 @@ async function createIncident(req, res, next) {
       type,
       location: location.trim(),
       description: description.trim(),
-      aiSummary,
       priority,
       status: 'PENDING',
       imageKey,
@@ -123,6 +121,10 @@ async function createIncident(req, res, next) {
       createdAt: now,
       updatedAt: now,
     };
+
+    // Generate AI summary with complete context
+    const aiSummary = await groqService.generateSummary(incident);
+    incident.aiSummary = aiSummary;
 
     // Store in DynamoDB
     await dynamoService.createIncident(incident);

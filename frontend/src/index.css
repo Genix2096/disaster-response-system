@@ -462,6 +462,12 @@ body {
 }
 
 .image-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
   border: 2px dashed var(--color-border);
   border-radius: var(--radius);
   padding: 2rem;

@@ -16,55 +16,69 @@ export default function Navbar() {
     navigate('/user/login');
   }
 
+  function handleAdminLogout() {
+    logout();
+    navigate('/admin/login');
+  }
+
+  let logoLink = '/user/login';
+  if (isAuthenticated) logoLink = '/admin/dashboard';
+  else if (isUserAuthenticated) logoLink = '/user/dashboard';
+
   return (
     <nav className="navbar">
-      <Link to="/" className="navbar-brand">
+      <Link to={logoLink} className="navbar-brand">
         <span className="logo-icon">🚨</span>
         <span>Disaster Response System</span>
       </Link>
 
       <div className="navbar-links">
-        <Link to="/" className={isActive('/')}>
-          Report Incident
-        </Link>
-
-        {/* Normal user section */}
-        {isUserAuthenticated ? (
-          <>
-            <Link id="nav-user-dashboard" to="/user/dashboard" className={isActive('/user/dashboard')}>
-              My Dashboard
-            </Link>
-            <button id="nav-user-logout" onClick={handleUserLogout} title={user?.username}>
-              Logout{user?.username ? ` (${user.username})` : ''}
-            </button>
-          </>
-        ) : (
-          !onAdminPage && (
-            <>
-              <Link id="nav-user-login" to="/user/login" className={isActive('/user/login')}>
-                Login
-              </Link>
-              <Link id="nav-user-register" to="/user/register" className={isActive('/user/register')}>
-                Sign Up
-              </Link>
-            </>
-          )
-        )}
-
-        <span className="navbar-divider" aria-hidden="true" />
-
-        {/* Admin section (existing behaviour) */}
+        {/* If Admin is logged in, show ONLY admin links */}
         {isAuthenticated ? (
           <>
             <Link to="/admin/dashboard" className={isActive('/admin/dashboard')}>
               Admin Dashboard
             </Link>
-            <button onClick={logout}>Admin Logout</button>
+            <button onClick={handleAdminLogout}>Admin Logout</button>
           </>
         ) : (
-          <Link to="/admin/login" className={isActive('/admin/login')}>
-            Admin
-          </Link>
+          /* Normal User / Unauthenticated flow */
+          <>
+            <Link to="/" className={isActive('/')}>
+              Report Incident
+            </Link>
+
+            {isUserAuthenticated ? (
+              <>
+                <Link id="nav-user-dashboard" to="/user/dashboard" className={isActive('/user/dashboard')}>
+                  My Dashboard
+                </Link>
+                <button id="nav-user-logout" onClick={handleUserLogout} title={user?.username}>
+                  Logout{user?.username ? ` (${user.username})` : ''}
+                </button>
+              </>
+            ) : (
+              !onAdminPage && (
+                <>
+                  <Link id="nav-user-login" to="/user/login" className={isActive('/user/login')}>
+                    Login
+                  </Link>
+                  <Link id="nav-user-register" to="/user/register" className={isActive('/user/register')}>
+                    Sign Up
+                  </Link>
+                </>
+              )
+            )}
+
+            {!isUserAuthenticated && (
+              <>
+                <span className="navbar-divider" aria-hidden="true" />
+                <Link to="/admin/login" className={isActive('/admin/login')}>
+                  Admin
+                </Link>
+              </>
+            )}
+          </>
         )}
       </div>
     </nav>

@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext';
+import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 
 /**
@@ -8,10 +9,16 @@ import LoadingSpinner from './LoadingSpinner';
  */
 export default function ProtectedUserRoute({ children }) {
   const { isUserAuthenticated, loading } = useUserAuth();
+  const { isAuthenticated: isAdminAuthenticated } = useAuth();
   const location = useLocation();
 
   if (loading) {
     return <div className="page-container"><LoadingSpinner /></div>;
+  }
+
+  // Bouncer for admins trying to access normal user routes
+  if (isAdminAuthenticated) {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   if (!isUserAuthenticated) {

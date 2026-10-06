@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext';
+import { useAuth } from '../context/AuthContext';
 import { friendlyCognitoError, isCognitoConfigured } from '../services/cognito';
 
 export default function UserLogin() {
@@ -14,6 +15,12 @@ export default function UserLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const notice = location.state?.notice;
+
+  const { isAuthenticated: isAdminAuthenticated } = useAuth();
+  
+  if (isAdminAuthenticated) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   if (!authLoading && isUserAuthenticated) {
     return <Navigate to={redirectTo} replace />;

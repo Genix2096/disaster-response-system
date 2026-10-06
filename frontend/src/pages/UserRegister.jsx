@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useUserAuth } from '../context/UserAuthContext';
+import { useAuth } from '../context/AuthContext';
 import { friendlyCognitoError, isCognitoConfigured } from '../services/cognito';
 
 const USERNAME_RE = /^[A-Za-z0-9._-]{3,64}$/;
@@ -34,6 +35,12 @@ export default function UserRegister() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState(resumeUsername ? 'Enter the verification code sent to your email.' : '');
   const [loading, setLoading] = useState(false);
+
+  const { isAuthenticated: isAdminAuthenticated } = useAuth();
+  
+  if (isAdminAuthenticated) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   if (!authLoading && isUserAuthenticated) {
     return <Navigate to="/user/dashboard" replace />;
