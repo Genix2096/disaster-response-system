@@ -11,11 +11,16 @@ const VALID_TYPES = ['Fire', 'Flood', 'Accident', 'Road Damage', 'Building Damag
 const VALID_STATUSES = ['PENDING', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'];
 
 /**
- * POST /api/incidents — Create a new incident (public).
+ * POST /api/incidents — Create a new incident (authenticated Cognito user).
+ *
+ * Ownership is taken ONLY from the verified Cognito token (req.user.userId).
+ * Any `userId` sent in the request body is deliberately ignored.
  */
 async function createIncident(req, res, next) {
   try {
+    // Only these fields are read from the client — never userId.
     const { type, location, description } = req.body;
+    const userId = req.user.userId;
 
     // --- Validation ---
     if (!type || !VALID_TYPES.includes(type)) {
@@ -41,7 +46,7 @@ async function createIncident(req, res, next) {
     const priority = determinePriority(type);
     const now = new Date().toISOString();
 
-    logger.info('Creating new incident', { incidentId, type, priority });
+    logger.info('Creating new incident', { incidentId, type, priority, userId });
 
     // Generate AI summary (graceful fallback on failure)
     const aiSummary = await groqService.generateSummary(description.trim(), type);
@@ -60,6 +65,7 @@ async function createIncident(req, res, next) {
     // Build incident record
     const incident = {
       incidentId,
+      userId,
       type,
       location: location.trim(),
       description: description.trim(),

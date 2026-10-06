@@ -7,4 +7,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  // amazon-cognito-identity-js (via its `buffer` dependency) expects Node's `global`.
+  define: {
+    global: 'globalThis',
+  },
 });

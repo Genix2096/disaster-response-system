@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getIdToken } from './cognito';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -15,12 +16,41 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ---- Public ----
+// ---- Normal user (Cognito) client ----
+// Separate instance so the admin JWT is never sent on user calls (and vice versa).
+const userApi = axios.create({
+  baseURL: `${API_URL}/api`,
+});
+
+userApi.interceptors.request.use(async (config) => {
+  const idToken = await getIdToken(); // auto-refreshes if expired
+  if (idToken) {
+    config.headers.Authorization = `Bearer ${idToken}`;
+  }
+  return config;
+});
+
+// ---- Authenticated user ----
 
 export async function submitIncident(formData) {
-  const response = await api.post('/incidents', formData, {
+  const response = await userApi.post('/incidents', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return response.data;
+}
+
+export async function getMyProfile() {
+  const response = await userApi.get('/users/me');
+  return response.data;
+}
+
+export async function getMyIncidents() {
+  const response = await userApi.get('/users/me/incidents');
+  return response.data;
+}
+
+export async function getMyIncidentById(id) {
+  const response = await userApi.get(`/users/me/incidents/${encodeURIComponent(id)}`);
   return response.data;
 }
 

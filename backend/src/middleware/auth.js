@@ -19,7 +19,16 @@ function authMiddleware(req, res, next) {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
+    // Pin the algorithm so tokens from other issuers (e.g. Cognito RS256 user
+    // tokens) can never be accepted here, and require the admin role.
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
+    if (decoded.role !== 'admin') {
+      logger.warn('Non-admin token used on admin route');
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required.',
+      });
+    }
     req.admin = decoded;
     next();
   } catch (error) {

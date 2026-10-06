@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { submitIncident } from '../services/api';
+import { useUserAuth } from '../context/UserAuthContext';
 
 const INCIDENT_TYPES = [
   'Fire',
@@ -13,6 +14,7 @@ const INCIDENT_TYPES = [
 
 export default function ReportIncident() {
   const navigate = useNavigate();
+  const { user, logout } = useUserAuth();
   const [form, setForm] = useState({
     type: '',
     location: '',
@@ -82,6 +84,12 @@ export default function ReportIncident() {
       const result = await submitIncident(formData);
       navigate('/incident-submitted', { state: { incident: result.data } });
     } catch (err) {
+      if (err.response?.status === 401) {
+        // Session expired or invalid — sign in again.
+        logout();
+        navigate('/user/login', { state: { from: '/', notice: 'Your session expired. Please sign in again.' } });
+        return;
+      }
       const msg = err.response?.data?.message || 'Failed to submit incident. Please try again.';
       setError(msg);
     } finally {
@@ -96,6 +104,9 @@ export default function ReportIncident() {
         <p className="page-subtitle">
           Help your community by reporting disasters and emergencies. Your report will be reviewed by administrators.
         </p>
+        {user?.username && (
+          <p className="reporting-as">Reporting as <strong>{user.username}</strong></p>
+        )}
 
         {error && (
           <div className="alert alert-error">

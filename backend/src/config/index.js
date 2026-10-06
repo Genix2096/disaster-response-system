@@ -14,6 +14,12 @@ module.exports = {
 
   // DynamoDB
   dynamoTableName: process.env.DYNAMODB_TABLE_NAME || 'DisasterReports',
+  dynamoUsersTableName: process.env.DYNAMODB_USERS_TABLE_NAME || 'DisasterUsers',
+
+  // Cognito (normal user authentication — separate from admin JWT auth)
+  cognitoRegion: process.env.COGNITO_REGION || 'ap-south-1',
+  cognitoUserPoolId: process.env.COGNITO_USER_POOL_ID || '',
+  cognitoClientId: process.env.COGNITO_CLIENT_ID || '',
 
   // SNS
   snsTopicArn: process.env.SNS_TOPIC_ARN || '',

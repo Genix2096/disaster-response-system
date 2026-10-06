@@ -51,6 +51,33 @@ async function getAllIncidents() {
 }
 
 /**
+ * Get all incidents owned by a specific user (Cognito sub).
+ * Filtering happens server-side in DynamoDB; legacy records without a
+ * userId never match. Follows pagination because a filtered Scan only
+ * evaluates 1 MB per page.
+ */
+async function getIncidentsByUserId(userId) {
+  const items = [];
+  let ExclusiveStartKey;
+
+  do {
+    const result = await docClient.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'userId = :userId',
+      ExpressionAttributeValues: { ':userId': userId },
+      ExclusiveStartKey,
+    }));
+    items.push(...(result.Items || []));
+    ExclusiveStartKey = result.LastEvaluatedKey;
+  } while (ExclusiveStartKey);
+
+  items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  logger.info('Fetched user incidents from DynamoDB', { userId, count: items.length });
+  return items;
+}
+
+/**
  * Update the status of an incident.
  */
 async function updateIncidentStatus(incidentId, status) {
@@ -88,6 +115,7 @@ module.exports = {
   createIncident,
   getIncidentById,
   getAllIncidents,
+  getIncidentsByUserId,
   updateIncidentStatus,
   deleteIncident,
 };

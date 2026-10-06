@@ -71,9 +71,12 @@ export default function IncidentSubmitted() {
             )}
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+          <div style={{ textAlign: 'center', marginTop: '2rem', display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/" className="btn btn-primary">
               📋 Report Another Incident
+            </Link>
+            <Link to="/user/dashboard" className="btn btn-outline">
+              📁 View My Dashboard
             </Link>
           </div>
         </div>
