@@ -5,6 +5,7 @@ import { getIncidents, deleteIncident, updateIncidentStatus } from '../services/
 import PriorityBadge from '../components/PriorityBadge';
 import StatusBadge from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
+import UserManagement from '../components/UserManagement';
 
 export default function AdminDashboard() {
   const { isAuthenticated } = useAuth();
@@ -13,6 +14,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [activeTab, setActiveTab] = useState('incidents'); // 'incidents' | 'users'
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,7 +128,27 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--color-border)' }}>
+        <button 
+          className={`btn ${activeTab === 'incidents' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setActiveTab('incidents')}
+          style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: 'none' }}
+        >
+          Incidents
+        </button>
+        <button 
+          className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setActiveTab('users')}
+          style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: 'none' }}
+        >
+          USER MANAGEMENT
+        </button>
+      </div>
+
+      {activeTab === 'incidents' ? (
+        <>
+          {/* Stats */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-value">{stats.total}</div>
@@ -272,6 +294,10 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
+      )}
+        </>
+      ) : (
+        <UserManagement />
       )}
     </div>
   );

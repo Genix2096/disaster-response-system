@@ -102,7 +102,7 @@ function requireActiveAccount(req, res, next) {
   if (req.userProfile?.accountStatus !== userService.ACCOUNT_STATUS.ACTIVE) {
     return res.status(403).json({
       success: false,
-      message: 'Your account is not active. You cannot submit incidents.',
+      message: 'Your account is suspended and you cannot submit new incidents.',
     });
   }
   next();

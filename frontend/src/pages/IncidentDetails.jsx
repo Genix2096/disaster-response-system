@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getIncidentById, updateIncidentStatus, deleteIncident } from '../services/api';
+import { getIncidentById, updateIncidentStatus, deleteIncident, markIncidentAsFake } from '../services/api';
 import PriorityBadge from '../components/PriorityBadge';
 import StatusBadge from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -15,6 +15,9 @@ export default function IncidentDetails() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
+  const [showFakeModal, setShowFakeModal] = useState(false);
+  const [fakeReason, setFakeReason] = useState('');
+  const [fakeLoading, setFakeLoading] = useState(false);
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
@@ -58,6 +61,26 @@ export default function IncidentDetails() {
       navigate('/admin/dashboard');
     } catch (err) {
       setError('Failed to delete incident.');
+    }
+  }
+
+  async function handleMarkFake(e) {
+    e.preventDefault();
+    if (!fakeReason.trim()) return;
+    
+    setFakeLoading(true);
+    try {
+      const result = await markIncidentAsFake(id, fakeReason);
+      setIncident(result.data);
+      setSuccessMsg('Incident marked as fake successfully.');
+      setShowFakeModal(false);
+      setFakeReason('');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to mark incident as fake.');
+      setShowFakeModal(false);
+    } finally {
+      setFakeLoading(false);
     }
   }
 
@@ -123,6 +146,44 @@ export default function IncidentDetails() {
                 <div className="detail-label">Updated At</div>
                 <div className="detail-value">{new Date(incident.updatedAt).toLocaleString()}</div>
               </div>
+              <div className="detail-item">
+                <div className="detail-label">Reported By</div>
+                <div className="detail-value" style={{ wordBreak: 'break-all' }}>{incident.userId || <span className="text-muted">Legacy (No User ID)</span>}</div>
+              </div>
+              <div className="detail-item">
+                <div className="detail-label">Departments</div>
+                <div className="detail-value">{incident.departments?.join(', ') || <span className="text-muted">—</span>}</div>
+              </div>
+              <div className="detail-item">
+                <div className="detail-label">Evidence Status</div>
+                <div className="detail-value">
+                  {incident.evidenceStrength || (incident.imageKey ? 'Photo uploaded — no geolocation metadata' : 'No photo evidence')}
+                </div>
+              </div>
+            </div>
+
+            {/* Fake Status */}
+            <div className="detail-item" style={{ marginTop: '1rem', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: incident.isFake ? '#fee2e2' : '#f8fafc' }}>
+              <div className="detail-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Fake Incident: {incident.isFake ? <strong style={{ color: 'var(--color-danger)' }}>YES</strong> : <strong>NO</strong>}</span>
+                {!incident.isFake && (
+                  <button 
+                    className="btn btn-sm btn-danger" 
+                    onClick={() => setShowFakeModal(true)}
+                    disabled={!incident.userId}
+                    title={!incident.userId ? "Legacy incidents without a user ID cannot be marked as fake." : ""}
+                  >
+                    Mark as Fake Incident
+                  </button>
+                )}
+              </div>
+              {incident.isFake && (
+                <div style={{ marginTop: '0.5rem', display: 'grid', gap: '0.5rem', fontSize: '0.9rem' }}>
+                  <div><strong>Fake Reason:</strong> {incident.fakeReason}</div>
+                  <div><strong>Marked By:</strong> {incident.markedFakeBy}</div>
+                  <div><strong>Marked At:</strong> {new Date(incident.markedFakeAt).toLocaleString()}</div>
+                </div>
+              )}
             </div>
 
             {/* Description */}
@@ -175,6 +236,36 @@ export default function IncidentDetails() {
           </div>
         )}
       </div>
+
+      {showFakeModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px' }}>
+            <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>Mark Incident as Fake</h2>
+            <form onSubmit={handleMarkFake}>
+              <div className="form-group">
+                <label className="form-label">Reason</label>
+                <textarea 
+                  className="form-input" 
+                  rows="4" 
+                  value={fakeReason}
+                  onChange={(e) => setFakeReason(e.target.value)}
+                  placeholder="Provide a reason why this incident is fake..."
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button type="button" className="btn btn-outline" onClick={() => setShowFakeModal(false)} disabled={fakeLoading}>Cancel</button>
+                <button type="submit" className="btn btn-danger" disabled={fakeLoading || !fakeReason.trim()}>
+                  {fakeLoading ? 'Processing...' : 'Confirm Fake Incident'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

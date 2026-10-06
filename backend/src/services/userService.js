@@ -1,4 +1,4 @@
-const { GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { GetCommand, PutCommand, ScanCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { docClient } = require('../config/aws');
 const config = require('../config');
 const logger = require('../utils/logger');
@@ -70,9 +70,68 @@ async function getOrCreateUserProfile(identity) {
   return createUserProfile(identity);
 }
 
+/**
+ * Get all users.
+ */
+async function getAllUsers() {
+  const result = await docClient.send(new ScanCommand({
+    TableName: USERS_TABLE,
+  }));
+  const items = result.Items || [];
+  items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return items;
+}
+
+/**
+ * Update user status manually.
+ */
+async function updateUserStatus(userId, status) {
+  const result = await docClient.send(new UpdateCommand({
+    TableName: USERS_TABLE,
+    Key: { userId },
+    UpdateExpression: 'SET accountStatus = :status, updatedAt = :updatedAt',
+    ExpressionAttributeValues: {
+      ':status': status,
+      ':updatedAt': new Date().toISOString(),
+    },
+    ReturnValues: 'ALL_NEW',
+  }));
+  return result.Attributes;
+}
+
+/**
+ * Increment risk score and fake incident count.
+ * Enforces automatic suspension if riskScore >= 100.
+ */
+async function incrementUserRisk(userId) {
+  const result = await docClient.send(new UpdateCommand({
+    TableName: USERS_TABLE,
+    Key: { userId },
+    UpdateExpression: 'SET riskScore = if_not_exists(riskScore, :zero) + :inc, fakeIncidentCount = if_not_exists(fakeIncidentCount, :zero) + :count, updatedAt = :updatedAt',
+    ExpressionAttributeValues: {
+      ':zero': 0,
+      ':inc': 25,
+      ':count': 1,
+      ':updatedAt': new Date().toISOString(),
+    },
+    ReturnValues: 'ALL_NEW',
+  }));
+  
+  const updatedUser = result.Attributes;
+  
+  if (updatedUser.riskScore >= 100 && updatedUser.accountStatus !== ACCOUNT_STATUS.SUSPENDED) {
+    return await updateUserStatus(userId, ACCOUNT_STATUS.SUSPENDED);
+  }
+  
+  return updatedUser;
+}
+
 module.exports = {
   ACCOUNT_STATUS,
   getUserById,
   createUserProfile,
   getOrCreateUserProfile,
+  getAllUsers,
+  updateUserStatus,
+  incrementUserRisk,
 };

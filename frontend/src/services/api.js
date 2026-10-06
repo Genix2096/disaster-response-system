@@ -88,4 +88,26 @@ export async function healthCheck() {
   return response.data;
 }
 
+// ---- Admin User Management ----
+
+export async function getUsers() {
+  const response = await api.get('/admin/users');
+  return response.data;
+}
+
+export async function suspendUser(id) {
+  const response = await api.patch(`/admin/users/${id}/suspend`);
+  return response.data;
+}
+
+export async function reactivateUser(id) {
+  const response = await api.patch(`/admin/users/${id}/reactivate`);
+  return response.data;
+}
+
+export async function markIncidentAsFake(id, fakeReason) {
+  const response = await api.patch(`/admin/incidents/${id}/fake`, { fakeReason });
+  return response.data;
+}
+
 export default api;

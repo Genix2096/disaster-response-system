@@ -43,6 +43,15 @@ export default function UserDashboard() {
   const isActive = profile?.accountStatus === 'ACTIVE';
   const displayName = profile?.username || user?.username || 'User';
 
+  const getRiskLevel = (score) => {
+    if (score >= 100) return 'SUSPENDED';
+    if (score >= 75) return 'HIGH_RISK';
+    if (score >= 50) return 'WARNING';
+    return 'NORMAL';
+  };
+
+  const riskLevel = profile ? getRiskLevel(profile.riskScore ?? 0) : 'NORMAL';
+
   return (
     <div className="page-container">
       <div className="dashboard-header">
@@ -75,18 +84,25 @@ export default function UserDashboard() {
                   {profile.accountStatus}
                 </span>
               </div>
-              <div className="profile-stats">
+              <div className="profile-stats" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 <div className="profile-stat">
                   <div className="profile-stat-value">{profile.riskScore ?? 0}</div>
                   <div className="profile-stat-label">Risk Score</div>
+                </div>
+                <div className="profile-stat">
+                  <div className="profile-stat-value" style={{ 
+                    color: riskLevel === 'SUSPENDED' ? 'var(--color-danger)' : 
+                           riskLevel === 'HIGH_RISK' ? 'var(--color-warning)' : 'inherit' 
+                  }}>{riskLevel}</div>
+                  <div className="profile-stat-label">Risk Level</div>
                 </div>
                 <div className="profile-stat">
                   <div className="profile-stat-value">{profile.fakeIncidentCount ?? 0}</div>
                   <div className="profile-stat-label">Fake Reports</div>
                 </div>
                 <div className="profile-stat">
-                  <div className="profile-stat-value">{incidents.length}</div>
-                  <div className="profile-stat-label">My Incidents</div>
+                  <div className="profile-stat-value">{profile.accountStatus}</div>
+                  <div className="profile-stat-label">Account Status</div>
                 </div>
               </div>
             </section>
@@ -95,7 +111,7 @@ export default function UserDashboard() {
           {profile && !isActive && (
             <div className="alert alert-error">
               <span>⛔</span>
-              <span>Your account is not active. You cannot submit new incidents.</span>
+              <span>Your account is suspended. You cannot submit new incidents.</span>
             </div>
           )}
 

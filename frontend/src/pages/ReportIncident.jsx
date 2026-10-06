@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { submitIncident } from '../services/api';
+import { submitIncident, getMyProfile } from '../services/api';
 import { useUserAuth } from '../context/UserAuthContext';
 
 const INCIDENT_TYPES = [
@@ -24,6 +24,24 @@ export default function ReportIncident() {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isSuspended, setIsSuspended] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const res = await getMyProfile();
+        if (res.data?.accountStatus === 'SUSPENDED') {
+          setIsSuspended(true);
+        }
+      } catch (err) {
+        // ignore
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+    checkStatus();
+  }, []);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -115,8 +133,17 @@ export default function ReportIncident() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="card">
-          {/* Incident Type */}
+        {profileLoading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
+        ) : isSuspended ? (
+          <div className="alert alert-error" style={{ marginTop: '1rem', padding: '2rem', textAlign: 'center' }}>
+            <span>⛔</span>
+            <h3>Account Suspended</h3>
+            <p>Your account is suspended. You cannot submit new incidents.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="card">
+            {/* Incident Type */}
           <div className="form-group">
             <label className="form-label" htmlFor="type">Incident Type *</label>
             <select
@@ -203,6 +230,7 @@ export default function ReportIncident() {
             )}
           </button>
         </form>
+        )}
       </div>
     </div>
   );

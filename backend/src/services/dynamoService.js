@@ -111,6 +111,43 @@ async function deleteIncident(incidentId) {
   logger.info('Incident deleted from DynamoDB', { incidentId });
 }
 
+/**
+ * Mark an incident as fake.
+ * Uses conditional expression to prevent marking an already fake incident, avoiding double-counting.
+ */
+async function markIncidentFake(incidentId, fakeReason, markedFakeBy, markedFakeAt) {
+  const params = {
+    TableName: TABLE_NAME,
+    Key: { incidentId },
+    UpdateExpression: 'SET isFake = :trueVal, fakeReason = :reason, markedFakeBy = :by, markedFakeAt = :at, updatedAt = :updatedAt',
+    ConditionExpression: 'attribute_not_exists(isFake) OR isFake = :falseVal',
+    ExpressionAttributeValues: {
+      ':trueVal': true,
+      ':falseVal': false,
+      ':reason': fakeReason,
+      ':by': markedFakeBy,
+      ':at': markedFakeAt,
+      ':updatedAt': new Date().toISOString(),
+    },
+    ReturnValues: 'ALL_NEW',
+  };
+
+  try {
+    const result = await docClient.send(new UpdateCommand(params));
+    logger.info('Incident marked as fake', { incidentId, markedFakeBy });
+    return result.Attributes;
+  } catch (error) {
+    if (error.name === 'ConditionalCheckFailedException') {
+      const existing = await getIncidentById(incidentId);
+      if (!existing) {
+        throw new Error('Incident not found.');
+      }
+      throw new Error('Incident is already marked as fake.');
+    }
+    throw error;
+  }
+}
+
 module.exports = {
   createIncident,
   getIncidentById,
@@ -118,4 +155,5 @@ module.exports = {
   getIncidentsByUserId,
   updateIncidentStatus,
   deleteIncident,
+  markIncidentFake,
 };
