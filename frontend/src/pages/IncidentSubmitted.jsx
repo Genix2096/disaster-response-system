@@ -69,6 +69,15 @@ export default function IncidentSubmitted() {
                 </div>
               </div>
             )}
+
+            {incident.imageKey && (
+              <div className="detail-item" style={{ marginTop: '1rem' }}>
+                <div className="detail-label">Evidence</div>
+                <div className="detail-value" style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', borderLeft: '3px solid #94a3b8' }}>
+                  Photo evidence uploaded. Geolocation information will be checked automatically.
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '2rem', display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>

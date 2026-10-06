@@ -4,6 +4,7 @@ const groqService = require('../services/groqService');
 const snsService = require('../services/snsService');
 const { generateIncidentId } = require('../utils/idGenerator');
 const { determinePriority } = require('../utils/priority');
+const exifr = require('exifr');
 const logger = require('../utils/logger');
 
 // Valid incident types
@@ -51,11 +52,51 @@ async function createIncident(req, res, next) {
     // Generate AI summary (graceful fallback on failure)
     const aiSummary = await groqService.generateSummary(description.trim(), type);
 
+    // Determine departments deterministically
+    let departments = [];
+    switch (type) {
+      case 'Fire':
+        departments = ['FIRE'];
+        break;
+      case 'Flood':
+        departments = ['FIRE', 'POLICE'];
+        break;
+      case 'Accident':
+      case 'Road Damage':
+        departments = ['POLICE'];
+        break;
+      case 'Building Damage':
+        departments = ['FIRE', 'POLICE'];
+        break;
+      case 'Other':
+      default:
+        departments = ['ADMIN_REVIEW'];
+        break;
+    }
+
     // Upload image to S3 if provided
     let imageKey = null;
+    let photoHasGeotag = false;
+    let photoLatitude = null;
+    let photoLongitude = null;
+    let evidenceStrength = 'No photo evidence';
+
     if (req.file) {
       try {
         imageKey = await s3Service.uploadImage(req.file, incidentId);
+        evidenceStrength = 'Photo uploaded — no geolocation metadata';
+
+        try {
+          const exifData = await exifr.parse(req.file.buffer, { gps: true });
+          if (exifData && exifData.latitude && exifData.longitude) {
+            photoHasGeotag = true;
+            photoLatitude = exifData.latitude;
+            photoLongitude = exifData.longitude;
+            evidenceStrength = 'Strong supporting evidence';
+          }
+        } catch (exifErr) {
+          logger.warn('Failed to parse EXIF data', { error: exifErr, incidentId });
+        }
       } catch (err) {
         logger.error('S3 image upload failed', { error: err, incidentId });
         // Continue without image — don't break the report
@@ -73,6 +114,12 @@ async function createIncident(req, res, next) {
       priority,
       status: 'PENDING',
       imageKey,
+      photoHasGeotag,
+      photoLatitude,
+      photoLongitude,
+      evidenceStrength,
+      departments,
+      isFake: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -80,10 +127,8 @@ async function createIncident(req, res, next) {
     // Store in DynamoDB
     await dynamoService.createIncident(incident);
 
-    // Send SNS alert for HIGH priority (non-blocking)
-    if (priority === 'HIGH') {
-      snsService.publishHighPriorityAlert(incident).catch(() => {});
-    }
+    // Send SNS alert based on departments (non-blocking)
+    snsService.publishAlert(incident).catch(() => {});
 
     // Return response (generate presigned URL if image exists)
     const response = { ...incident };

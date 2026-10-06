@@ -4,42 +4,56 @@ const config = require('../config');
 const logger = require('../utils/logger');
 
 /**
- * Publish a HIGH priority incident alert to the SNS topic.
+ * Publish an alert to SNS topics based on departments.
  * Failure is logged but does NOT prevent incident creation.
  */
-async function publishHighPriorityAlert(incident) {
-  if (!config.snsTopicArn) {
-    logger.warn('SNS_TOPIC_ARN not configured. Skipping SNS notification.');
-    return;
-  }
-
+async function publishAlert(incident) {
   const message = `
-🚨 HIGH PRIORITY INCIDENT 🚨
+DISASTER RESPONSE ALERT
 
 Incident ID: ${incident.incidentId}
 Type: ${incident.type}
-Location: ${incident.location}
 Priority: ${incident.priority}
+Location: ${incident.location}
 
-Summary:
-${incident.aiSummary}
+Description:
+${incident.description}
 
-Reported At: ${incident.createdAt}
+Evidence:
+Photo uploaded: ${incident.imageKey ? 'Yes' : 'No'}
+Geotag available: ${incident.photoHasGeotag ? 'Yes' : 'No'}
+Evidence strength: ${incident.evidenceStrength || 'No photo evidence'}
+
+Reported at: ${incident.createdAt}
   `.trim();
 
-  const params = {
-    TopicArn: config.snsTopicArn,
-    Subject: `🚨 HIGH PRIORITY: ${incident.type} at ${incident.location}`,
-    Message: message,
+  const publishToTopic = async (topicArn, department) => {
+    if (!topicArn) {
+      logger.warn(`SNS Topic ARN not configured for ${department}. Skipping notification.`);
+      return;
+    }
+    const params = {
+      TopicArn: topicArn,
+      Subject: `DISASTER ALERT: ${incident.type} at ${incident.location}`,
+      Message: message,
+    };
+    try {
+      await snsClient.send(new PublishCommand(params));
+      logger.info(`SNS alert published to ${department}`, { incidentId: incident.incidentId });
+    } catch (error) {
+      logger.error(`Failed to publish SNS alert to ${department}`, { error, incidentId: incident.incidentId });
+    }
   };
 
-  try {
-    await snsClient.send(new PublishCommand(params));
-    logger.info('SNS alert published', { incidentId: incident.incidentId });
-  } catch (error) {
-    // SNS failure should NOT break incident creation
-    logger.error('Failed to publish SNS alert', { error, incidentId: incident.incidentId });
+  const promises = [];
+  if (incident.departments?.includes('FIRE')) {
+    promises.push(publishToTopic(config.snsTopicArnFire, 'FIRE'));
   }
+  if (incident.departments?.includes('POLICE')) {
+    promises.push(publishToTopic(config.snsTopicArnPolice, 'POLICE'));
+  }
+
+  await Promise.allSettled(promises);
 }
 
-module.exports = { publishHighPriorityAlert };
+module.exports = { publishAlert };

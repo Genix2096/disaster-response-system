@@ -23,6 +23,8 @@ module.exports = {
 
   // SNS
   snsTopicArn: process.env.SNS_TOPIC_ARN || '',
+  snsTopicArnFire: process.env.SNS_TOPIC_ARN_FIRE || 'arn:aws:sns:ap-south-1:630583673900:DisasterAlerts-Fire',
+  snsTopicArnPolice: process.env.SNS_TOPIC_ARN_POLICE || 'arn:aws:sns:ap-south-1:630583673900:DisasterAlerts-Police',
 
   // Groq
   groqApiKey: process.env.GROQ_API_KEY || '',

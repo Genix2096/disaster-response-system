@@ -118,7 +118,7 @@ export default function UserDashboard() {
                     <th>Priority</th>
                     <th>Status</th>
                     <th>Created</th>
-                    <th>Image</th>
+                    <th>Evidence Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -136,7 +136,9 @@ export default function UserDashboard() {
                       <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                         {new Date(incident.createdAt).toLocaleDateString()}
                       </td>
-                      <td>{incident.imageKey ? '📷 Yes' : <span className="text-muted">—</span>}</td>
+                      <td style={{ fontSize: '0.85rem' }}>
+                        {incident.evidenceStrength || (incident.imageKey ? 'Photo uploaded — no geolocation metadata' : 'No photo evidence')}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

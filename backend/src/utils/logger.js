@@ -27,7 +27,7 @@ const logger = {
       timestamp: new Date().toISOString(),
       message,
       ...(data.error instanceof Error
-        ? { error: data.error.message, stack: data.error.stack }
+        ? { ...data, error: data.error.message, stack: data.error.stack }
         : data),
     }));
   },

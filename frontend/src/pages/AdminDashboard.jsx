@@ -219,6 +219,9 @@ export default function AdminDashboard() {
                 <th>Location</th>
                 <th>Priority</th>
                 <th>Status</th>
+                <th>User ID</th>
+                <th>Departments</th>
+                <th>Evidence Status</th>
                 <th>Created</th>
                 <th>Actions</th>
               </tr>
@@ -235,6 +238,11 @@ export default function AdminDashboard() {
                   <td>{incident.location?.length > 30 ? incident.location.substring(0, 30) + '...' : incident.location}</td>
                   <td><PriorityBadge priority={incident.priority} /></td>
                   <td><StatusBadge status={incident.status} /></td>
+                  <td style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{incident.userId || <span className="text-muted">Legacy</span>}</td>
+                  <td style={{ fontSize: '0.8rem' }}>{incident.departments?.join(', ') || <span className="text-muted">—</span>}</td>
+                  <td style={{ fontSize: '0.8rem' }}>
+                    {incident.evidenceStrength || (incident.imageKey ? 'Photo uploaded — no geolocation metadata' : 'No photo evidence')}
+                  </td>
                   <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                     {new Date(incident.createdAt).toLocaleDateString()}
                   </td>
