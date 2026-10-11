@@ -24,8 +24,9 @@ async function login(req, res, next) {
       });
     }
 
-    if (!config.jwtSecret) {
-      logger.error('JWT_SECRET is not configured');
+    const secret = typeof config.jwtSecret === 'string' ? config.jwtSecret.trim() : '';
+    if (!secret) {
+      logger.error('Admin login rejected: JWT_SECRET is not configured or empty');
       return res.status(500).json({
         success: false,
         message: 'Authentication service unavailable.',
@@ -34,7 +35,7 @@ async function login(req, res, next) {
 
     const token = jwt.sign(
       { username: config.adminUsername, role: 'admin' },
-      config.jwtSecret,
+      secret,
       { expiresIn: '8h' }
     );
 

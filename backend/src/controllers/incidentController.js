@@ -4,6 +4,7 @@ const groqService = require('../services/groqService');
 const snsService = require('../services/snsService');
 const { generateIncidentId } = require('../utils/idGenerator');
 const { determinePriority } = require('../utils/priority');
+const { validateImageBuffer } = require('../utils/imageValidator');
 const exifr = require('exifr');
 const logger = require('../utils/logger');
 
@@ -81,6 +82,19 @@ async function createIncident(req, res, next) {
     let evidenceStrength = 'No photo evidence';
 
     if (req.file) {
+      // Validate image buffer if not already validated by middleware
+      if (!req.file.detectedMime) {
+        const validation = validateImageBuffer(req.file.buffer, req.file.originalname);
+        if (!validation.valid) {
+          return res.status(400).json({
+            success: false,
+            message: validation.error,
+          });
+        }
+        req.file.detectedMime = validation.mime;
+        req.file.detectedExt = validation.extension;
+      }
+
       try {
         imageKey = await s3Service.uploadImage(req.file, incidentId);
         evidenceStrength = 'Photo uploaded — no geolocation metadata';

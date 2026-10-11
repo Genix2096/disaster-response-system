@@ -30,6 +30,7 @@ export default function UserRegister() {
 
   const [step, setStep] = useState(resumeUsername ? 'confirm' : 'register');
   const [form, setForm] = useState({ username: resumeUsername, email: '', password: '', confirmPassword: '' });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [code, setCode] = useState('');
   const [destination, setDestination] = useState('');
   const [error, setError] = useState('');
@@ -70,6 +71,12 @@ export default function UserRegister() {
   async function handleRegister(e) {
     e.preventDefault();
     setError('');
+
+    if (!agreedToTerms) {
+      setError('You must agree to the Terms & Conditions and Privacy Policy to create an account.');
+      return;
+    }
+
     const payload = { ...form, username: form.username.trim(), email: form.email.trim() };
     const validationError = validate(payload);
     if (validationError) {
@@ -167,6 +174,22 @@ export default function UserRegister() {
                   value={form.confirmPassword} onChange={handleChange} placeholder="Re-enter password"
                   autoComplete="new-password" />
               </div>
+
+              {/* Terms and Privacy Policy Acknowledgement */}
+              <div className="form-group checkbox-group">
+                <label className="checkbox-label" htmlFor="register-terms">
+                  <input
+                    id="register-terms"
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  />
+                  <span>
+                    I agree to the <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</Link> and <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>
+                  </span>
+                </label>
+              </div>
+
               <button id="register-submit" type="submit" className="btn btn-primary btn-block" disabled={loading}>
                 {loading ? 'Creating Account...' : '🚀 Create Account'}
               </button>
@@ -197,6 +220,12 @@ export default function UserRegister() {
           <p className="auth-switch">
             Already have an account? <Link to="/user/login" id="go-to-login">Sign in</Link>
           </p>
+
+          <div className="auth-legal-footer">
+            <Link to="/terms">Terms &amp; Conditions</Link>
+            <span>•</span>
+            <Link to="/privacy">Privacy Policy</Link>
+          </div>
         </div>
       </div>
     </div>

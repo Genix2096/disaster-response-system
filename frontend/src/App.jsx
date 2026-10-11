@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import ProtectedUserRoute from './components/ProtectedUserRoute';
 import ReportIncident from './pages/ReportIncident';
 import IncidentSubmitted from './pages/IncidentSubmitted';
@@ -10,25 +11,34 @@ import UserLogin from './pages/UserLogin';
 import UserRegister from './pages/UserRegister';
 import UserDashboard from './pages/UserDashboard';
 import UserIncidentDetails from './pages/UserIncidentDetails';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsConditions from './pages/TermsConditions';
 
 export default function App() {
   return (
-    <div>
+    <div className="app-shell">
       <Navbar />
-      <Routes>
-        {/* Normal user (Cognito) — reporting requires login */}
-        <Route path="/" element={<ProtectedUserRoute><ReportIncident /></ProtectedUserRoute>} />
-        <Route path="/incident-submitted" element={<ProtectedUserRoute><IncidentSubmitted /></ProtectedUserRoute>} />
-        <Route path="/user/login" element={<UserLogin />} />
-        <Route path="/user/register" element={<UserRegister />} />
-        <Route path="/user/dashboard" element={<ProtectedUserRoute><UserDashboard /></ProtectedUserRoute>} />
-        <Route path="/user/incidents/:id" element={<ProtectedUserRoute><UserIncidentDetails /></ProtectedUserRoute>} />
+      <main className="app-main">
+        <Routes>
+          {/* Normal user (Cognito) — reporting requires login */}
+          <Route path="/" element={<ProtectedUserRoute><ReportIncident /></ProtectedUserRoute>} />
+          <Route path="/incident-submitted" element={<ProtectedUserRoute><IncidentSubmitted /></ProtectedUserRoute>} />
+          <Route path="/user/login" element={<UserLogin />} />
+          <Route path="/user/register" element={<UserRegister />} />
+          <Route path="/user/dashboard" element={<ProtectedUserRoute><UserDashboard /></ProtectedUserRoute>} />
+          <Route path="/user/incidents/:id" element={<ProtectedUserRoute><UserIncidentDetails /></ProtectedUserRoute>} />
 
-        {/* Admin (existing JWT auth — unchanged) */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/incidents/:id" element={<IncidentDetails />} />
-      </Routes>
+          {/* Admin (existing JWT auth — unchanged) */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/incidents/:id" element={<IncidentDetails />} />
+
+          {/* Public Legal & Policy routes */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsConditions />} />
+        </Routes>
+      </main>
+      <Footer />
     </div>
   );
 }

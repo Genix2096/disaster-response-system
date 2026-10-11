@@ -18,10 +18,19 @@ function authMiddleware(req, res, next) {
 
   const token = authHeader.split(' ')[1];
 
+  const secret = typeof config.jwtSecret === 'string' ? config.jwtSecret.trim() : '';
+  if (!secret) {
+    logger.error('Admin JWT verification rejected: JWT_SECRET is not configured or empty');
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication service unavailable.',
+    });
+  }
+
   try {
     // Pin the algorithm so tokens from other issuers (e.g. Cognito RS256 user
     // tokens) can never be accepted here, and require the admin role.
-    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
+    const decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
     if (decoded.role !== 'admin') {
       logger.warn('Non-admin token used on admin route');
       return res.status(403).json({

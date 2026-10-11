@@ -28,20 +28,25 @@ Reported at: ${incident.createdAt}
   `.trim();
 
   const publishToTopic = async (topicArn, department) => {
-    if (!topicArn) {
-      logger.warn(`SNS Topic ARN not configured for ${department}. Skipping notification.`);
-      return;
+    if (!topicArn || typeof topicArn !== 'string' || topicArn.trim() === '') {
+      logger.warn(`SNS Topic ARN not configured for ${department}. Notification skipped.`);
+      return { department, status: 'skipped', reason: 'ARN_NOT_CONFIGURED' };
     }
     const params = {
-      TopicArn: topicArn,
+      TopicArn: topicArn.trim(),
       Subject: `DISASTER ALERT: ${incident.type} at ${incident.location}`,
       Message: message,
     };
     try {
       await snsClient.send(new PublishCommand(params));
       logger.info(`SNS alert published to ${department}`, { incidentId: incident.incidentId });
+      return { department, status: 'published' };
     } catch (error) {
-      logger.error(`Failed to publish SNS alert to ${department}`, { error, incidentId: incident.incidentId });
+      logger.error(`Failed to publish SNS alert to ${department}`, {
+        error: error.message,
+        incidentId: incident.incidentId,
+      });
+      return { department, status: 'failed', error: error.message };
     }
   };
 
@@ -53,7 +58,8 @@ Reported at: ${incident.createdAt}
     promises.push(publishToTopic(config.snsTopicArnPolice, 'POLICE'));
   }
 
-  await Promise.allSettled(promises);
+  const results = await Promise.allSettled(promises);
+  return results.map((r) => (r.status === 'fulfilled' ? r.value : { status: 'rejected', error: r.reason }));
 }
 
 module.exports = { publishAlert };

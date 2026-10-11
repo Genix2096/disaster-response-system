@@ -104,6 +104,12 @@ export default function UserLogin() {
           <p className="auth-switch">
             Don&apos;t have an account? <Link to="/user/register" id="go-to-register">Create one</Link>
           </p>
+
+          <div className="auth-legal-footer">
+            <Link to="/terms">Terms &amp; Conditions</Link>
+            <span>•</span>
+            <Link to="/privacy">Privacy Policy</Link>
+          </div>
         </div>
       </div>
     </div>

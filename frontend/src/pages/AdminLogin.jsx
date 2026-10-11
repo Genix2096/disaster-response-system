@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginAdmin } from '../services/api';
 
@@ -83,6 +83,12 @@ export default function AdminLogin() {
               {loading ? 'Signing In...' : '🔑 Sign In'}
             </button>
           </form>
+
+          <div className="auth-legal-footer" style={{ marginTop: '1.75rem' }}>
+            <Link to="/terms">Terms &amp; Conditions</Link>
+            <span>•</span>
+            <Link to="/privacy">Privacy Policy</Link>
+          </div>
         </div>
       </div>
     </div>
